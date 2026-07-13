@@ -1,0 +1,69 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "紫薇斗数",
+        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/chart/index",
+      "style": {
+        "navigationBarTitleText": "排盘",
+        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/result/index",
+      "style": {
+        "navigationBarTitleText": "命盘",
+        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarTextStyle": "black"
+      }
+    }
+  ],
+  "globalStyle": {
+    "backgroundColor": "#F5F0E8",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#F5F0E8",
+    "navigationBarTitleText": "紫薇斗数",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#9E9E9E",
+    "selectedColor": "#C04B3E",
+    "backgroundColor": "#F5F0E8",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/chart/index",
+        "text": "排盘"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^u-(.*)": "uview-plus/components/u-$1/u-$1.vue"
+    }
+  }
+}

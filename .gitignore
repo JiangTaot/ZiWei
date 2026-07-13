@@ -15,8 +15,10 @@ venv/
 # Build
 dist/
 build/
+target/
 *.egg-info/
 
 # Environment
 .env
 .env.local
+application-dev.yml

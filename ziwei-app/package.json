@@ -1,0 +1,26 @@
+{
+  "name": "ziwei-app",
+  "version": "1.0.0",
+  "description": "紫薇斗数 - ZiWei DouShu WeChat Mini Program",
+  "scripts": {
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "dev:h5": "uni",
+    "build:h5": "uni build"
+  },
+  "dependencies": {
+    "@vue/shared": "^3.5.39",
+    "pinia": "^2.1.0",
+    "vue": "^3.5.39"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.0",
+    "@dcloudio/uni-app": "vue3",
+    "@dcloudio/uni-automator": "vue3",
+    "@dcloudio/uni-mp-weixin": "vue3",
+    "@dcloudio/uni-ui": "^1.5.0",
+    "@dcloudio/vite-plugin-uni": "vue3",
+    "sass": "^1.69.0",
+    "vite": "^5.0.0"
+  }
+}
