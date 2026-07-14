@@ -45,7 +45,7 @@ const ERROR_MESSAGES = {
 }
 
 /**
- * Get auth token from storage
+ * 获取 auth token（从 storage 读取，userStore.login 时同步写入）
  */
 function getToken() {
   try {

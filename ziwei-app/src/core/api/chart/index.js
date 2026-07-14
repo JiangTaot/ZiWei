@@ -12,7 +12,7 @@ export default {
    */
   calculate(data) {
     return http.post('/chart/calculate', data, {
-      custom: { showLoading: true, loadingMsg: '正在排盘中...', auth: false },
+      showLoading: true, loadingMsg: '正在排盘中...',
     })
   },
 
@@ -23,7 +23,7 @@ export default {
    */
   getChartById(id) {
     return http.get(`/chart/${id}`, {}, {
-      custom: { showLoading: true },
+      showLoading: true,
     })
   },
 

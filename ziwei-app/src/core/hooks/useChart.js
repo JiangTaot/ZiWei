@@ -26,10 +26,16 @@ export function useChart() {
       const res = await $api.chart.calculate(formData)
       const chartData = res.data || res
       if (chartData) {
-        // Save to store history
+        // Save to local store history
         const chartStore = $store('chart')
         if (chartStore) {
           chartStore.addChart(chartData)
+
+          // If logged in, refresh server chart list (chart was saved with userId)
+          const userStore = $store('user')
+          if (userStore && userStore.isLoggedIn) {
+            chartStore.loadServerCharts()
+          }
         }
         // Save current chart to storage for quick access on result page
         uni.setStorageSync('current_chart', JSON.stringify(chartData))
@@ -48,7 +54,7 @@ export function useChart() {
   }
 
   /**
-   * Load a chart by ID (tries storage cache first, then API)
+   * Load a chart by ID (tries storage cache first for the matching ID, then API)
    * @param {string|number} chartId
    * @returns {Promise<Object|null>}
    */
@@ -56,25 +62,19 @@ export function useChart() {
     loading.value = true
     errorMsg.value = ''
 
-    // Try storage cache first
+    // Try storage cache first (only if the stored chart matches the requested ID)
     try {
       const stored = uni.getStorageSync('current_chart')
       if (stored) {
         const data = JSON.parse(stored)
-        if (data && data.palaces) {
+        if (data && data.palaces && String(data.id) === String(chartId)) {
           loading.value = false
           return data
         }
       }
     } catch (_) { /* ignore */ }
 
-    // Fall back to API
-    if (!chartId || chartId === '0') {
-      loading.value = false
-      errorMsg.value = '后端服务暂未启动，可查看模拟数据'
-      return null
-    }
-
+    // Fetch from API
     try {
       const res = await $api.chart.getChartById(chartId)
       const data = res.data || res

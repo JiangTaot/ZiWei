@@ -18,13 +18,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
     private JwtInterceptor jwtInterceptor;
 
     /**
-     * Whitelist paths that do not require authentication
+     * 认证白名单 — 这些路径不强制要求 JWT token
      */
     private static final String[] AUTH_WHITELIST = {
             "/api/ziwei/user/login",
-            "/api/ziwei/chart/calculate",  // public: calculate charts
-            "/api/ziwei/chart/*",          // public: view any chart by ID (GET)
-            "/api/ziwei/chart/my-list",    // public: list charts (returns empty if no userId)
+            "/api/ziwei/chart/calculate",  // 可选认证：OptionalJwtFilter 已登录时提取 userId 关联命盘
             "/swagger-resources/**",
             "/webjars/**",
             "/v3/api-docs/**",

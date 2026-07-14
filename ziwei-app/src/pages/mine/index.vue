@@ -15,10 +15,22 @@
       </view>
     </view>
 
+    <!-- 登录引导（未登录时显示） -->
+    <view class="login-section" v-if="!userStore.isLoggedIn">
+      <view class="login-divider">
+        <view class="divider-line"></view>
+        <text class="divider-text">登录后可查看云端命盘</text>
+        <view class="divider-line"></view>
+      </view>
+      <button class="btn-login" @click="handleWechatLogin">
+        <text class="btn-login-text">微信一键登录</text>
+      </button>
+    </view>
+
     <!-- Stats Row -->
     <view class="stats-row">
       <view class="stat-item">
-        <text class="stat-value">{{ chartStore.chartCount }}</text>
+        <text class="stat-value">{{ displayChartCount }}</text>
         <text class="stat-label">命盘数量</text>
       </view>
       <view class="stat-divider"></view>
@@ -33,14 +45,33 @@
       </view>
     </view>
 
-    <!-- My Charts Section -->
+    <!-- 我的命盘 -->
     <view class="section-card">
       <view class="section-header">
         <text class="section-title">我的命盘</text>
         <text class="section-action" @click="viewAllCharts">查看全部 &#8250;</text>
       </view>
 
-      <view v-if="recentCharts.length > 0" class="chart-list">
+      <!-- 加载中 -->
+      <view v-if="chartStore.isLoading" class="loading-row">
+        <text class="loading-icon">&#9775;</text>
+        <text class="loading-text">加载中...</text>
+      </view>
+
+      <!-- 已登录无数据 -->
+      <view v-else-if="userStore.isLoggedIn && recentCharts.length === 0" class="empty-chart">
+        <text class="empty-icon-text">&#9789;</text>
+        <text class="empty-text">暂无命盘，去首页开始排盘吧</text>
+      </view>
+
+      <!-- 未登录无本地数据 -->
+      <view v-else-if="!userStore.isLoggedIn && recentCharts.length === 0" class="empty-chart">
+        <text class="empty-icon-text">&#9789;</text>
+        <text class="empty-text">登录后查看云端保存的命盘</text>
+      </view>
+
+      <!-- 命盘列表 -->
+      <view v-else class="chart-list">
         <view
           v-for="(chart, index) in recentCharts"
           :key="index"
@@ -54,12 +85,10 @@
             <text class="chart-row-name">{{ chart.displayDate || '命盘' }}</text>
             <text class="chart-row-meta">{{ chart.genderLabel }} &#183; {{ chart.location || '未知地点' }}</text>
           </view>
-          <text class="chart-row-arrow">&#8250;</text>
+          <view class="chart-row-delete" @click.stop="confirmDelete(chart)">
+            <text class="delete-icon">&#10005;</text>
+          </view>
         </view>
-      </view>
-
-      <view v-else class="empty-chart">
-        <text class="empty-text">暂无命盘，去首页开始排盘吧</text>
       </view>
     </view>
 
@@ -91,9 +120,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import zw from '@/core'
+import { useAuth } from '@/core/hooks/useAuth'
 
+const { wechatLogin } = useAuth()
 const userStore = zw.$store('user')
 const chartStore = zw.$store('chart')
 const cacheSize = ref('0KB')
@@ -103,26 +134,107 @@ const avatarText = computed(() => {
   return '紫'
 })
 
+// 登录后使用合并列表，否则使用本地列表
 const recentCharts = computed(() => {
+  if (chartStore && chartStore.isServerLoaded) {
+    return chartStore.allCharts.slice(0, 5)
+  }
   return chartStore?.recentCharts || []
 })
 
-onShow(() => {
-  // Data is auto-loaded via Pinia persist plugin
+// 统计行：登录后显示服务端合并数量
+const displayChartCount = computed(() => {
+  if (chartStore && chartStore.isServerLoaded) {
+    return chartStore.allCharts.length
+  }
+  return chartStore?.chartCount || 0
 })
+
+onShow(() => {
+  console.log('[ZiWei] mine onShow, isLoggedIn:', userStore?.isLoggedIn, 'chartStore:', !!chartStore)
+  // 已登录则刷新服务端命盘列表
+  if (userStore && userStore.isLoggedIn && chartStore) {
+    console.log('[ZiWei] 开始调用 loadServerCharts')
+    chartStore.loadServerCharts()
+  }
+})
+
+// 下拉刷新
+onPullDownRefresh(async () => {
+  if (userStore && userStore.isLoggedIn && chartStore) {
+    await chartStore.loadServerCharts()
+  }
+  uni.stopPullDownRefresh()
+})
+
+async function handleWechatLogin() {
+  const result = await wechatLogin()
+  if (result && chartStore) {
+    await chartStore.loadServerCharts()
+  }
+}
 
 function editProfile() {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
 function viewAllCharts() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
+  if (!chartStore) return
+
+  const charts = chartStore.isServerLoaded
+    ? chartStore.allCharts
+    : chartStore.chartHistory
+
+  if (charts.length === 0) {
+    uni.showToast({ title: '暂无命盘记录', icon: 'none' })
+    return
+  }
+
+  const itemList = charts.slice(0, 20).map((c) => {
+    const date = c.displayDate || `${c.solarYear || ''}-${String(c.solarMonth || '').padStart(2, '0')}-${String(c.solarDay || '').padStart(2, '0')}`
+    return `${date}  ${c.genderLabel || ''}  ${c.location || ''}`
+  })
+
+  uni.showActionSheet({
+    title: '我的命盘（点击查看）',
+    itemList,
+    success: (res) => {
+      const chart = charts[res.tapIndex]
+      if (chart && chart.id) {
+        zw.$router.go('/pages/result/index', { chartId: chart.id })
+      }
+    },
+  })
 }
 
 function openChart(chart) {
   if (chart.id) {
     zw.$router.go('/pages/result/index', { chartId: chart.id })
   }
+}
+
+/**
+ * 长按命盘 → 确认删除
+ */
+function confirmDelete(chart) {
+  if (!chart || !chart.id) return
+
+  uni.showModal({
+    title: '删除命盘',
+    content: `确定要删除「${chart.displayDate || '该命盘'}」吗？删除后不可恢复。`,
+    confirmText: '删除',
+    confirmColor: '#C04B3E',
+    success: async (res) => {
+      if (res.confirm && chartStore) {
+        const success = await chartStore.deleteServerChart(chart.id)
+        if (success) {
+          uni.showToast({ title: '已删除', icon: 'success', duration: 1500 })
+        } else {
+          uni.showToast({ title: '删除失败，请稍后重试', icon: 'none' })
+        }
+      }
+    },
+  })
 }
 
 function navigateSetting() {
@@ -207,6 +319,56 @@ function clearCache() {
 .action-icon {
   font-size: 36rpx;
   color: $text-hint;
+}
+
+// ========== Login Section ==========
+.login-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-sm $spacing-lg $spacing-md;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: $spacing-md;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1rpx;
+  background-color: $divider-color;
+}
+
+.divider-text {
+  font-size: $font-xs;
+  color: $text-hint;
+  padding: 0 $spacing-md;
+}
+
+.btn-login {
+  width: 480rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #07C160 0%, #06AD56 100%);
+  border: none;
+  border-radius: $radius-lg;
+  box-shadow: 0 4rpx 16rpx rgba(7, 193, 96, 0.25);
+
+  &::after { border: none; }
+
+  &:active { opacity: 0.85; }
+}
+
+.btn-login-text {
+  font-size: $font-lg;
+  font-weight: 600;
+  color: $text-inverse;
+  letter-spacing: 2rpx;
 }
 
 // ========== Stats Row ==========
@@ -325,10 +487,22 @@ function clearCache() {
   margin-top: 4rpx;
 }
 
-.chart-row-arrow {
-  font-size: 32rpx;
-  color: $border-color;
+.chart-row-delete {
+  width: 52rpx;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  border-radius: $radius-round;
+  background-color: rgba(192, 75, 62, 0.08);
+  margin-left: $spacing-xs;
+}
+
+.delete-icon {
+  font-size: 24rpx;
+  color: $color-primary;
+  font-weight: 600;
 }
 
 .empty-chart {
@@ -336,9 +510,42 @@ function clearCache() {
   text-align: center;
 }
 
+.empty-icon-text {
+  display: block;
+  font-size: 56rpx;
+  color: $text-hint;
+  margin-bottom: $spacing-sm;
+  opacity: 0.4;
+}
+
 .empty-text {
   font-size: $font-sm;
   color: $text-hint;
+}
+
+// Loading
+.loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-xl $spacing-lg;
+}
+
+.loading-icon {
+  font-size: 36rpx;
+  color: $color-primary;
+  animation: mineSpin 2s linear infinite;
+}
+
+.loading-text {
+  font-size: $font-sm;
+  color: $text-hint;
+}
+
+@keyframes mineSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 // Menu List

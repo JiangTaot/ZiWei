@@ -76,6 +76,11 @@ const useUserStore = defineStore('user', () => {
     uni.removeStorageSync('auth_token')
     uni.removeStorageSync('user_openid')
     uni.removeStorageSync('user_id')
+    // Clear server chart cache (will reload with new user after re-login)
+    const chartStore = $store('chart')
+    if (chartStore) {
+      chartStore.clearServerCharts()
+    }
   }
 
   /**

@@ -90,16 +90,27 @@ const { wechatLogin } = useAuth()
 const userStore = zw.$store('user')
 const chartStore = zw.$store('chart')
 
+// Use merged list (server + local), or fall back to local-only
 const historyList = computed(() => {
+  if (chartStore && chartStore.isServerLoaded) {
+    return chartStore.allCharts
+  }
   return chartStore ? chartStore.chartHistory : []
 })
 
 onShow(() => {
-  // Data is auto-loaded via Pinia persist — no manual load needed
+  // If logged in, refresh server charts
+  if (userStore && userStore.isLoggedIn && chartStore) {
+    chartStore.loadServerCharts()
+  }
 })
 
 async function handleWechatLogin() {
-  await wechatLogin()
+  const result = await wechatLogin()
+  // After successful login, load server charts
+  if (result && chartStore) {
+    await chartStore.loadServerCharts()
+  }
 }
 
 function startChart() {

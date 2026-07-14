@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 /**
- * Ziwei chart controller - REST API for chart calculation and query
+ * 命盘 REST API — 排盘、查询、删除
  *
  * @author JTWORLD
  */

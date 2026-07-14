@@ -93,7 +93,7 @@ const isSelectedMingGong = computed(() => {
 })
 
 onLoad((options) => {
-  // Priority 1: pending chart request from chart page
+  // Priority 1: pending chart request from chart page (new calculation)
   try {
     const stored = uni.getStorageSync('pending_chart_request')
     if (stored) {
@@ -104,10 +104,11 @@ onLoad((options) => {
 
   if (pendingFormData) {
     fetchChartFromForm()
-  } else if (options && options.chartId) {
-    // Priority 2: existing chart by ID
+  } else if (options && options.chartId && options.chartId !== '0' && options.chartId !== 'undefined') {
+    // Priority 2: existing chart by server ID — fetch from API
     fetchChartData(options.chartId)
   } else {
+    // Priority 3: no valid chart ID → show mock data
     useMockData()
   }
 })
@@ -132,8 +133,9 @@ function onPalaceClick(palace) {
 }
 
 function requestAIInterpretation() {
-  if (chartData.id == null) {
-    uni.showToast({ title: 'AI解读需要先保存命盘', icon: 'none' })
+  // Require a real server-saved chart ID (not locally generated mock IDs)
+  if (chartData.id == null || String(chartData.id).startsWith('chart_')) {
+    uni.showToast({ title: 'AI解读需要先登录并保存命盘', icon: 'none' })
     return
   }
   showAiPanel.value = true

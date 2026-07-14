@@ -21,7 +21,9 @@
       "style": {
         "navigationBarTitleText": "我的",
         "navigationBarBackgroundColor": "#FFFFFF",
-        "navigationBarTextStyle": "black"
+        "navigationBarTextStyle": "black",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#F8F5F0"
       }
     }
   ],

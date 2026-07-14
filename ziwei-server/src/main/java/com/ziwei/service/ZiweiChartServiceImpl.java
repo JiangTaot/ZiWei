@@ -210,6 +210,9 @@ public class ZiweiChartServiceImpl implements ZiweiChartService {
 
     @Override
     public List<ZiweiChartVO> getMyCharts(Long userId) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
         LambdaQueryWrapper<ZiweiChartEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ZiweiChartEntity::getUserId, userId)
                 .orderByDesc(ZiweiChartEntity::getCreateTime);

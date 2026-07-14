@@ -11,10 +11,11 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import jakarta.annotation.Resource;
 
 /**
- * JWT authentication interceptor
+ * JWT 认证拦截器
  * <p>
- * Extracts Bearer token from Authorization header, validates it,
- * and injects userId into request attributes for downstream controllers.
+ * 从 Authorization header 提取 Bearer token，校验后注入 userId/openid 到 request attributes。
+ * 对 GET /api/ziwei/chart/{id}（数字 ID）做可选认证：有 token 则提取 userId，无 token 也放行。
+ * 其余 /api/** 路径强制要求有效 token。
  *
  * @author JTWORLD
  */
@@ -22,10 +23,10 @@ import jakarta.annotation.Resource;
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
 
-    /** Request attribute key for current userId */
+    /** request attribute key：当前用户 ID */
     public static final String USER_ID_ATTR = "userId";
 
-    /** Request attribute key for current openid */
+    /** request attribute key：当前用户 openid */
     public static final String OPENID_ATTR = "openid";
 
     @Resource
@@ -33,19 +34,40 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        // Allow OPTIONS preflight
+        // 放行 OPTIONS 预检请求
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
 
+        String path = request.getRequestURI();
+
+        // GET /api/ziwei/chart/{数字ID} — 可选认证（匿名用户也能查看命盘详情）
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.matches(".*/api/ziwei/chart/\\d+$")) {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                try {
+                    Long userId = jwtUtil.getUserIdFromToken(token);
+                    String openid = jwtUtil.getOpenidFromToken(token);
+                    request.setAttribute(USER_ID_ATTR, userId);
+                    request.setAttribute(OPENID_ATTR, openid);
+                    log.debug("JWT 可选认证: userId={}, openid={}", userId, openid);
+                } catch (JwtException e) {
+                    log.debug("JWT 可选认证: token 无效，放行匿名请求");
+                }
+            }
+            return true;
+        }
+
+        // 其余路径 — 强制认证
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(401);
             response.setContentType("application/json;charset=UTF-8");
             try {
-                response.getWriter().write("{\"code\":401,\"msg\":\"Missing or invalid Authorization header\",\"data\":null}");
+                response.getWriter().write("{\"code\":401,\"msg\":\"未登录或登录已过期\",\"data\":null}");
             } catch (Exception ex) {
-                log.warn("Failed to write 401 response", ex);
+                log.warn("写入 401 响应失败", ex);
             }
             return false;
         }
@@ -56,16 +78,16 @@ public class JwtInterceptor implements HandlerInterceptor {
             String openid = jwtUtil.getOpenidFromToken(token);
             request.setAttribute(USER_ID_ATTR, userId);
             request.setAttribute(OPENID_ATTR, openid);
-            log.debug("JWT authenticated: userId={}, openid={}", userId, openid);
+            log.debug("JWT 认证成功: userId={}, openid={}", userId, openid);
             return true;
         } catch (JwtException e) {
-            log.warn("JWT validation failed: {}", e.getMessage());
+            log.warn("JWT 校验失败: {}", e.getMessage());
             response.setStatus(401);
             response.setContentType("application/json;charset=UTF-8");
             try {
-                response.getWriter().write("{\"code\":401,\"msg\":\"Invalid or expired token\",\"data\":null}");
+                response.getWriter().write("{\"code\":401,\"msg\":\"token 无效或已过期\",\"data\":null}");
             } catch (Exception ex) {
-                log.warn("Failed to write 401 response", ex);
+                log.warn("写入 401 响应失败", ex);
             }
             return false;
         }

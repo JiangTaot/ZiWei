@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Converter between ChartContext, Entities, and VOs
+ * ChartContext、Entity、VO 之间的转换器
  *
  * @author JTWORLD
  */
