@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 import jakarta.annotation.Resource;
+import java.util.Map;
 
 /**
  * Ziwei AI interpretation controller - REST API for AI-powered chart readings
@@ -39,7 +40,9 @@ public class ZiweiAiController {
     @Operation(summary = "AI 解读整个命盘")
     public Result<String> interpretChart(
             @PathVariable("chartId") Long chartId,
-            @Parameter(description = "用户问题（可选）") @RequestParam(value = "question", required = false) String question) {
+            @Parameter(description = "请求体，可包含 question 字段")
+            @RequestBody(required = false) Map<String, String> body) {
+        String question = body != null ? body.get("question") : null;
         log.info("AI interpret chart: chartId={}, question={}", chartId, question);
         String result = aiService.interpretChart(chartId, question);
         return Result.success(result);
@@ -56,7 +59,9 @@ public class ZiweiAiController {
     @Operation(summary = "AI 流式解读整个命盘（SSE）")
     public Flux<String> interpretChartStream(
             @PathVariable("chartId") Long chartId,
-            @Parameter(description = "用户问题（可选）") @RequestParam(value = "question", required = false) String question) {
+            @Parameter(description = "请求体，可包含 question 字段")
+            @RequestBody(required = false) Map<String, String> body) {
+        String question = body != null ? body.get("question") : null;
         log.info("AI stream interpret chart: chartId={}, question={}", chartId, question);
         return aiService.interpretChartStream(chartId, question);
     }
@@ -74,7 +79,9 @@ public class ZiweiAiController {
     public Result<String> interpretPalace(
             @PathVariable("chartId") Long chartId,
             @PathVariable("palaceType") int palaceType,
-            @Parameter(description = "用户问题（可选）") @RequestParam(value = "question", required = false) String question) {
+            @Parameter(description = "请求体，可包含 question 字段")
+            @RequestBody(required = false) Map<String, String> body) {
+        String question = body != null ? body.get("question") : null;
         log.info("AI interpret palace: chartId={}, palaceType={}, question={}", chartId, palaceType, question);
         String result = aiService.interpretPalace(chartId, palaceType, question);
         return Result.success(result);
