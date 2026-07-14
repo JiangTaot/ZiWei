@@ -1,6 +1,6 @@
 <template>
   <view class="chart-board-container">
-    <canvas v-if="!hideCanvas" canvas-id="chartBoard" id="chartBoard" class="board-canvas"
+    <canvas v-show="!hideCanvas" canvas-id="chartBoard" id="chartBoard" class="board-canvas"
       :style="canvasStyle" @tap="onCanvasTap" disable-scroll></canvas>
   </view>
 </template>
@@ -76,10 +76,7 @@ onMounted(() => {
   nextTick(() => setTimeout(draw, 300))
 })
 watch(() => [props.chartData, props.activeTab], () => nextTick(() => setTimeout(draw, 100)), { deep: true })
-// 弹窗关闭后 canvas 重新渲染，需要重绘
-watch(() => props.hideCanvas, (val) => {
-  if (!val) nextTick(() => setTimeout(draw, 200))
-})
+// hideCanvas 使用 v-show（hidden 属性），Canvas 不销毁，无需重绘
 
 // ========== Helpers ==========
 function resetText(ctx, a, b) { ctx.setTextAlign(a); ctx.setTextBaseline(b) }
