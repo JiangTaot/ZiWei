@@ -1,6 +1,6 @@
 <template>
   <view class="chart-board-container">
-    <canvas canvas-id="chartBoard" id="chartBoard" class="board-canvas"
+    <canvas v-if="!hideCanvas" canvas-id="chartBoard" id="chartBoard" class="board-canvas"
       :style="canvasStyle" @tap="onCanvasTap" disable-scroll></canvas>
   </view>
 </template>
@@ -58,6 +58,7 @@ const P = 6, C4 = 4
 const props = defineProps({
   chartData: { type: Object, default: () => ({}) },
   activeTab: { type: String, default: 'natal' },
+  hideCanvas: { type: Boolean, default: false },
 })
 const emit = defineEmits(['palaceClick'])
 
@@ -75,6 +76,10 @@ onMounted(() => {
   nextTick(() => setTimeout(draw, 300))
 })
 watch(() => [props.chartData, props.activeTab], () => nextTick(() => setTimeout(draw, 100)), { deep: true })
+// 弹窗关闭后 canvas 重新渲染，需要重绘
+watch(() => props.hideCanvas, (val) => {
+  if (!val) nextTick(() => setTimeout(draw, 200))
+})
 
 // ========== Helpers ==========
 function resetText(ctx, a, b) { ctx.setTextAlign(a); ctx.setTextBaseline(b) }

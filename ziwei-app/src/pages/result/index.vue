@@ -29,6 +29,7 @@
         <zw-chart-board
           ref="chartBoardRef"
           :chartData="chartData"
+          :hideCanvas="showDetail || showAiPanel"
           @palaceClick="onPalaceClick"
         />
       </view>
