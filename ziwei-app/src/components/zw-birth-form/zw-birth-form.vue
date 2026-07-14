@@ -97,15 +97,9 @@
 
 <script setup>
 import { reactive, computed } from 'vue'
+import { TIME_PERIODS } from '@/core/helper/const'
 
-const TIME_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
-const TIME_RANGES = [
-  '23:00-01:00', '01:00-03:00', '03:00-05:00', '05:00-07:00',
-  '07:00-09:00', '09:00-11:00', '11:00-13:00', '13:00-15:00',
-  '15:00-17:00', '17:00-19:00', '19:00-21:00', '21:00-23:00',
-]
-
-const timeOptionLabels = TIME_BRANCHES.map((b, i) => `${b}时 ${TIME_RANGES[i]}`)
+const timeOptionLabels = TIME_PERIODS.map((p) => `${p.name} ${p.range}`)
 
 const today = new Date()
 const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -114,7 +108,7 @@ const localForm = reactive({
   solarYear: today.getFullYear(),
   solarMonth: today.getMonth() + 1,
   solarDay: today.getDate(),
-  hour: -1,
+  hour: 0, // 默认子时
   gender: 1,
   birthPlace: '',
   isDst: false,
@@ -133,7 +127,8 @@ const timePickerIndex = computed(() => localForm.hour >= 0 ? localForm.hour : 0)
 
 const timeDisplay = computed(() => {
   if (localForm.hour < 0) return '请选择时辰'
-  return `${TIME_BRANCHES[localForm.hour]}时 ${TIME_RANGES[localForm.hour]}`
+  const period = TIME_PERIODS[localForm.hour]
+  return period ? `${period.name} ${period.range}` : '未知时辰'
 })
 
 function onDateChange(e) {

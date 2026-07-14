@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     uni(),
   ],
+  envPrefix: 'ZIWEI_',
   css: {
     preprocessorOptions: {
       scss: {

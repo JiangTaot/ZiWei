@@ -81,73 +81,34 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useUserStore } from '@/store/user'
+import zw from '@/core'
+import { useAuth } from '@/core/hooks/useAuth'
 
-const userStore = useUserStore()
-const historyList = ref([])
+const { wechatLogin } = useAuth()
+const userStore = zw.$store('user')
+const chartStore = zw.$store('chart')
 
-onShow(() => {
-  loadHistory()
+const historyList = computed(() => {
+  return chartStore ? chartStore.chartHistory : []
 })
 
-function loadHistory() {
-  try {
-    const data = uni.getStorageSync('chart_history')
-    if (data) {
-      historyList.value = JSON.parse(data)
-    }
-  } catch (e) {
-    console.error('[ZiWei] Failed to load history:', e)
-  }
-}
+onShow(() => {
+  // Data is auto-loaded via Pinia persist — no manual load needed
+})
 
 async function handleWechatLogin() {
-  try {
-    uni.showLoading({ title: '登录中...', mask: true })
-    const loginRes = await uniLogin()
-    const code = loginRes.code
-    if (code) {
-      const result = await userStore.login(code)
-      if (result) {
-        uni.showToast({ title: '登录成功', icon: 'success', duration: 1500 })
-      } else {
-        uni.showToast({ title: '登录失败，请检查后端连接', icon: 'none', duration: 2000 })
-      }
-    }
-  } catch (e) {
-    console.error('[ZiWei] Login failed:', e)
-    uni.showToast({ title: '登录失败，请重试', icon: 'none', duration: 2000 })
-  } finally {
-    uni.hideLoading()
-  }
-}
-
-function uniLogin() {
-  return new Promise((resolve, reject) => {
-    let settled = false
-    const timer = setTimeout(() => {
-      if (!settled) { settled = true; reject(new Error('wx.login timeout')) }
-    }, 15000)
-    uni.login({
-      success: (res) => {
-        if (!settled) { settled = true; clearTimeout(timer); resolve(res) }
-      },
-      fail: (err) => {
-        if (!settled) { settled = true; clearTimeout(timer); reject(err) }
-      },
-    })
-  })
+  await wechatLogin()
 }
 
 function startChart() {
-  uni.switchTab({ url: '/pages/chart/index' })
+  zw.$router.switchTab('/pages/chart/index')
 }
 
 function viewChart(item) {
   if (item.id) {
-    uni.navigateTo({ url: `/pages/result/index?chartId=${item.id}` })
+    zw.$router.go('/pages/result/index', { chartId: item.id })
   }
 }
 
@@ -156,9 +117,8 @@ function clearHistory() {
     title: '确认清空',
     content: '确定要清空所有历史命盘记录吗？',
     success: (res) => {
-      if (res.confirm) {
-        uni.removeStorageSync('chart_history')
-        historyList.value = []
+      if (res.confirm && chartStore) {
+        chartStore.clearHistory()
         uni.showToast({ title: '已清空', icon: 'success', duration: 1500 })
       }
     },

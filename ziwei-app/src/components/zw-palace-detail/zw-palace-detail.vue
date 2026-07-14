@@ -93,22 +93,7 @@
 
 <script setup>
 import { computed } from 'vue'
-
-// Palace meanings mapping
-const PALACE_MEANINGS = {
-  '命宫': '代表本人性格、天赋、运势之根本，是命盘的核心。',
-  '兄弟宫': '代表兄弟姐妹、朋友同僚关系、合作运势。',
-  '夫妻宫': '代表婚姻、配偶、感情生活及两性关系。',
-  '子女宫': '代表子女、晚辈、生育运、享乐与创造力。',
-  '财帛宫': '代表财富、收入、理财能力与物质享受。',
-  '疾厄宫': '代表健康、疾病、灾厄与身体状况。',
-  '迁移宫': '代表外出、变动、远行运势及外在形象。',
-  '交友宫': '代表朋友、社交、下属关系及仆役运。',
-  '官禄宫': '代表事业、功名、职业发展与社会地位。',
-  '田宅宫': '代表房产、家庭、居住环境与祖业。',
-  '福德宫': '代表福气、精神享受、晚年运与内心世界。',
-  '父母宫': '代表父母、长辈、师长缘分及上司关系。',
-}
+import { TWELVE_PALACES } from '@/core/helper/const'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -154,10 +139,9 @@ const minorStars = computed(() => {
 })
 
 const palaceMeaning = computed(() => {
-  const name = props.palace.palaceName || props.palace.name || ''
-  // Remove full-width spaces and match
-  const cleaned = name.replace(/\s+/g, '')
-  return PALACE_MEANINGS[cleaned] || '暂无详细说明'
+  const name = (props.palace.palaceName || props.palace.name || '').replace(/\s+/g, '')
+  const palace = TWELVE_PALACES.find((p) => p.name === name)
+  return palace?.meaning || '暂无详细说明'
 })
 
 function getStarClass(brightness) {

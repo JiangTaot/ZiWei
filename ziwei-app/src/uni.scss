@@ -1,5 +1,6 @@
 // ========== ZiWei DouShu Design System ==========
-// Eastern aesthetic tokens: rice paper, ink, cinnabar, bronze gold
+// 「深邃墨韵」Dark Ink Elegance theme
+// Ink-black base + bronze gold + cinnabar red — premium Eastern aesthetic
 
 // ========== Font Size System ==========
 $font-xs: 22rpx;
@@ -10,27 +11,33 @@ $font-xl: 40rpx;
 $font-xxl: 48rpx;
 $font-sl: 80rpx;
 
-// ========== Color System: Eastern Elegance ==========
-$color-primary: #C04B3E;           // Cinnabar red
+// ========== Font Family ==========
+$font-family-base: 'Songti SC', 'STSong', 'Noto Serif CJK SC',
+  'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', serif;
+
+// ========== Color System: Warm Ivory (象牙白) ==========
+$color-primary:       #C04B3E;   // Cinnabar red
 $color-primary-light: #D4746A;
-$color-primary-dark: #9A352B;
-$color-gold: #B8976E;             // Bronze gold
-$color-jade: #5B8C5A;             // Jade green
-$color-ink: #2C2C2C;              // Ink black
+$color-primary-dark:  #9A352B;
+$color-gold:          #B8976E;   // Bronze gold
+$color-gold-light:    #D4C4A8;
+$color-jade:          #5B8C5A;   // Jade green
+$color-ink:           #2C2C2C;   // Ink black
 
-$bg-page: #F5F0E8;               // Rice paper base
-$bg-card: #FFFFFF;                // Card white
-$bg-warm: #FDF8F2;               // Warm cream
+$bg-page:    #FFFFFF;   // Pure white
+$bg-card:    #FFFFFF;   // White card
+$bg-warm:    #F8F5F0;   // Warm cream
+$bg-canvas:  #FFFFFF;   // Canvas white
 
-$text-primary: #2C2C2C;          // Ink
-$text-secondary: #6B6B6B;        // Gray ink
-$text-hint: #9E9E9E;             // Light ink
-$text-inverse: #FFFFFF;
+$text-primary:   #2C2C2C;   // Ink
+$text-secondary: #6B6B6B;   // Gray
+$text-hint:      #9E9E9E;   // Light gray
+$text-inverse:   #FFFFFF;
 
-$border-color: #E8E0D5;
+$border-color:  #E8E0D5;
 $divider-color: #F0EBE3;
 
-// ========== Spacing (based on 20rpx) ==========
+// ========== Spacing ==========
 $spacing-xs: 10rpx;
 $spacing-sm: 20rpx;
 $spacing-md: 30rpx;
@@ -44,51 +51,48 @@ $radius-lg: 24rpx;
 $radius-xl: 40rpx;
 $radius-round: 50%;
 
-// ========== Shadows ==========
-$shadow-card: 0 4rpx 20rpx rgba(44, 44, 44, 0.06);
-$shadow-md: 0 4rpx 16rpx rgba(44, 44, 44, 0.08);
-$shadow-lg: 0 8rpx 32rpx rgba(44, 44, 44, 0.12);
+// ========== Shadows (on dark bg, shadows are subtle glows) ==========
+$shadow-card: 0 2rpx 16rpx rgba(0, 0, 0, 0.4);
+$shadow-md:   0 4rpx 24rpx rgba(0, 0, 0, 0.5);
+$shadow-lg:   0 8rpx 40rpx rgba(0, 0, 0, 0.6);
 
 // ========== Z-index ==========
 $z-index-dropdown: 100;
-$z-index-overlay: 200;
-$z-index-modal: 300;
-$z-index-toast: 400;
+$z-index-overlay:  200;
+$z-index-modal:    300;
+$z-index-toast:    400;
 
 // ========== Backward Compatibility Aliases ==========
-// Keep old variable names working for existing components
-// (ChartBoard, PalaceDetail, AiPanel, StarIcon)
-$color-bg-primary: $bg-page;
-$color-bg-secondary: #F5EFE5;
-$color-bg-card: $bg-card;
-$color-text-primary: $text-primary;
-$color-text-secondary: $text-secondary;
-$color-text-hint: $text-hint;
-$color-accent: $color-primary;
-$color-accent-light: $color-primary-light;
-$color-gold-light: #D4C4A8;
-$color-border: $border-color;
-$color-divider: $divider-color;
+$color-bg-primary:    $bg-page;
+$color-bg-secondary:  #F5F0E8;
+$color-bg-card:       $bg-card;
+$color-text-primary:  $text-primary;
+$color-text-secondary:$text-secondary;
+$color-text-hint:     $text-hint;
+$color-accent:        $color-primary;
+$color-accent-light:  $color-primary-light;
+$color-border:        $border-color;
+$color-divider:       $divider-color;
 
-$font-size-xs: $font-xs;
-$font-size-sm: $font-sm;
-$font-size-base: $font-base;
-$font-size-md: $font-lg;
-$font-size-lg: $font-xl;
-$font-size-xl: 44rpx;
-$font-size-xxl: $font-xxl;
+$font-size-xs:    $font-xs;
+$font-size-sm:    $font-sm;
+$font-size-base:  $font-base;
+$font-size-md:    $font-lg;
+$font-size-lg:    $font-xl;
+$font-size-xl:    44rpx;
+$font-size-xxl:   $font-xxl;
 $font-size-title: $font-sl;
 
 $radius-lg-old: $radius-lg;
-$shadow-sm: $shadow-card;
+$shadow-sm:     $shadow-card;
 
 // ========== uView Plus theme override ==========
-$u-primary: $color-primary;
-$u-warning: $color-gold;
-$u-success: $color-jade;
-$u-error: $color-primary;
-$u-info: #666666;
-$u-main-color: $text-primary;
+$u-primary:       $color-primary;
+$u-warning:       $color-gold;
+$u-success:       $color-jade;
+$u-error:         $color-primary;
+$u-info:          #777;
+$u-main-color:    $text-primary;
 $u-content-color: $text-secondary;
-$u-tips-color: $text-hint;
-$u-bg-color: $bg-page;
+$u-tips-color:    $text-hint;
+$u-bg-color:      $bg-page;

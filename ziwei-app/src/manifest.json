@@ -15,7 +15,7 @@
     },
     "usingComponents": true,
     "optimization": {
-      "subPackages": false
+      "subPackages": true
     }
   },
   "uniStatistics": {

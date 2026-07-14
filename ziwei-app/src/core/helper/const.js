@@ -1,5 +1,10 @@
-// ZiWei DouShu constants and reference data
-// Contains Heavenly Stems, Earthly Branches, stars, palaces, and utility mappings
+/**
+ * ZiWei DouShu business constants and reference data
+ * Migrated from src/utils/constants.js — single source of truth for all domain data.
+ *
+ * Contains Heavenly Stems, Earthly Branches, stars, palaces, and utility mappings.
+ * Import from anywhere: import { HEAVENLY_STEMS, TWELVE_PALACES } from '@/core/helper/const'
+ */
 
 // === Heavenly Stems (天干) ===
 export const HEAVENLY_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
@@ -140,6 +145,8 @@ export const CHART_TYPES = {
   day: '流日盘',       // Daily fortune
   hour: '流时盘',      // Hourly fortune
 }
+
+// ========== Utility Functions ==========
 
 /**
  * Get element for a given stem-branch pair

@@ -1,16 +1,19 @@
 /**
  * HTTP request wrapper for uni-app
- * Inspired by yudao-mall-uniapp design patterns:
- * - Loading reference counting (no flicker on concurrent requests)
- * - Custom config per request (showLoading, showError, auth, skipAuth)
- * - Unified error message mapping
- * - Token injection & 401 handling
+ * Migrated from src/api/request.js into the core framework layer.
+ *
+ * Enhancements over the original:
+ * - Reads BASE_URL from core/config (no more hardcoded IP)
+ * - Cleaner auth/skipAuth semantics (auth: false = skip auth)
+ * - Response interceptor always unwraps code !== 0 errors
+ *
+ * Inspired by yudao-mall-uniapp sheep/request/index.js
  */
+import { baseUrl, apiPath, timeout, aiTimeout } from '../config'
 
-// Dev: use LAN IP so real devices on same WiFi can reach the backend
-const BASE_URL = 'http://192.168.0.102:48121'
-const TIMEOUT = 30000
-const AI_TIMEOUT = 120000 // AI interpretation needs longer timeout
+const BASE_URL = baseUrl + apiPath
+const TIMEOUT = timeout
+const AI_TIMEOUT = aiTimeout
 
 // Loading counter — avoids flicker on concurrent requests
 const LoadingCounter = { count: 0 }
@@ -59,10 +62,10 @@ function handleUnauthorized() {
   uni.removeStorageSync('auth_token')
   uni.removeStorageSync('user_openid')
   uni.removeStorageSync('user_id')
+  // Clear user-store persist data
   try {
-    const { useUserStore } = require('@/store/user')
-    useUserStore().logout()
-  } catch (_) { /* store may be unavailable */ }
+    uni.removeStorageSync('user-store')
+  } catch (_) { /* ignore */ }
 }
 
 /**
@@ -107,7 +110,7 @@ function request(options = {}) {
     ...header,
   }
 
-  // Inject auth token
+  // Inject auth token (when auth is true)
   if (auth) {
     const token = getToken()
     if (token) {
@@ -117,8 +120,8 @@ function request(options = {}) {
 
   // Build query string
   const queryString = Object.keys(params)
-    .filter(k => params[k] != null && params[k] !== '')
-    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .filter((k) => params[k] != null && params[k] !== '')
+    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
     .join('&')
 
   let finalUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`
@@ -161,7 +164,7 @@ function request(options = {}) {
           return
         }
 
-        // Handle business errors
+        // Handle business errors (unified response unwrapping)
         if (responseData && responseData.code !== undefined && responseData.code !== 0 && responseData.code !== 200) {
           const msg = responseData.message || responseData.msg || '操作失败'
           if (showError) {
@@ -193,8 +196,8 @@ function request(options = {}) {
 
 // Convenience methods
 const http = {
-  get(url, data = {}, custom = {}) {
-    return request({ url, method: 'GET', data, custom })
+  get(url, params = {}, custom = {}) {
+    return request({ url, method: 'GET', params, custom })
   },
 
   post(url, data = {}, custom = {}) {
@@ -210,4 +213,5 @@ const http = {
   },
 }
 
+export { request }
 export default http

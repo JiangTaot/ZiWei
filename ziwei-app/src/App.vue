@@ -1,8 +1,10 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { ZwInit } from '@/core'
 
 onLaunch(() => {
   console.log('[ZiWei] App launched')
+  ZwInit()
 })
 
 onShow(() => {
@@ -22,8 +24,7 @@ page {
   background-color: $bg-page;
   color: $text-primary;
   font-size: $font-base;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: $font-family-base;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }

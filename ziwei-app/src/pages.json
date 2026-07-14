@@ -4,7 +4,7 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "紫薇斗数",
-        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarBackgroundColor": "#FFFFFF",
         "navigationBarTextStyle": "black"
       }
     },
@@ -12,15 +12,7 @@
       "path": "pages/chart/index",
       "style": {
         "navigationBarTitleText": "排盘",
-        "navigationBarBackgroundColor": "#F5F0E8",
-        "navigationBarTextStyle": "black"
-      }
-    },
-    {
-      "path": "pages/result/index",
-      "style": {
-        "navigationBarTitleText": "命盘",
-        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarBackgroundColor": "#FFFFFF",
         "navigationBarTextStyle": "black"
       }
     },
@@ -28,23 +20,48 @@
       "path": "pages/mine/index",
       "style": {
         "navigationBarTitleText": "我的",
-        "navigationBarBackgroundColor": "#F5F0E8",
+        "navigationBarBackgroundColor": "#FFFFFF",
         "navigationBarTextStyle": "black"
       }
     }
   ],
+  "subPackages": [
+    {
+      "root": "pages/result",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "命盘",
+            "navigationBarBackgroundColor": "#1A1A1E",
+            "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/index/index": {
+      "network": "all",
+      "packages": ["pages/result"]
+    },
+    "pages/chart/index": {
+      "network": "all",
+      "packages": ["pages/result"]
+    }
+  },
   "globalStyle": {
-    "backgroundColor": "#F5F0E8",
+    "backgroundColor": "#FFFFFF",
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#F5F0E8",
+    "navigationBarBackgroundColor": "#FFFFFF",
     "navigationBarTitleText": "紫薇斗数",
     "navigationBarTextStyle": "black"
   },
   "tabBar": {
     "color": "#9E9E9E",
     "selectedColor": "#C04B3E",
-    "backgroundColor": "#F5F0E8",
-    "borderStyle": "black",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/index/index",
@@ -63,6 +80,7 @@
   "easycom": {
     "autoscan": true,
     "custom": {
+      "^zw-(.*)": "@/components/zw-$1/zw-$1.vue",
       "^u-(.*)": "uview-plus/components/u-$1/u-$1.vue"
     }
   }

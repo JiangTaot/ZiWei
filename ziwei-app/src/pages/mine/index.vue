@@ -7,7 +7,7 @@
         <text class="avatar-text">{{ avatarText }}</text>
       </view>
       <view class="user-info">
-        <text class="user-name">{{ userName || '紫微星人' }}</text>
+        <text class="user-name">{{ userStore.displayName }}</text>
         <text class="user-desc">探索你的星命之旅</text>
       </view>
       <view class="user-action" @click="editProfile">
@@ -18,17 +18,17 @@
     <!-- Stats Row -->
     <view class="stats-row">
       <view class="stat-item">
-        <text class="stat-value">{{ chartCount }}</text>
+        <text class="stat-value">{{ chartStore.chartCount }}</text>
         <text class="stat-label">命盘数量</text>
       </view>
       <view class="stat-divider"></view>
       <view class="stat-item">
-        <text class="stat-value">{{ favoriteStars.length }}</text>
+        <text class="stat-value">{{ chartStore.favoriteStars.length }}</text>
         <text class="stat-label">收藏星曜</text>
       </view>
       <view class="stat-divider"></view>
       <view class="stat-item">
-        <text class="stat-value">{{ interpretationCount }}</text>
+        <text class="stat-value">{{ chartStore.interpretationCount }}</text>
         <text class="stat-label">解读次数</text>
       </view>
     </view>
@@ -40,9 +40,9 @@
         <text class="section-action" @click="viewAllCharts">查看全部 &#8250;</text>
       </view>
 
-      <view v-if="chartList.length > 0" class="chart-list">
+      <view v-if="recentCharts.length > 0" class="chart-list">
         <view
-          v-for="(chart, index) in chartList"
+          v-for="(chart, index) in recentCharts"
           :key="index"
           class="chart-row"
           @click="openChart(chart)"
@@ -92,40 +92,24 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import zw from '@/core'
 
-const userName = ref('')
-const chartCount = ref(0)
-const favoriteStars = ref([])
-const interpretationCount = ref(0)
-const chartList = ref([])
+const userStore = zw.$store('user')
+const chartStore = zw.$store('chart')
 const cacheSize = ref('0KB')
 
 const avatarText = computed(() => {
-  if (userName.value) return userName.value.charAt(0)
+  if (userStore?.displayName) return userStore.displayName.charAt(0)
   return '紫'
 })
 
-onShow(() => {
-  loadUserData()
+const recentCharts = computed(() => {
+  return chartStore?.recentCharts || []
 })
 
-function loadUserData() {
-  try {
-    const history = uni.getStorageSync('chart_history')
-    if (history) {
-      const parsed = JSON.parse(history)
-      chartList.value = parsed.slice(0, 5)
-      chartCount.value = parsed.length
-    }
-
-    const interpCount = uni.getStorageSync('interpretation_count')
-    if (interpCount) {
-      interpretationCount.value = parseInt(interpCount) || 0
-    }
-  } catch (e) {
-    console.error('[ZiWei] Failed to load user data:', e)
-  }
-}
+onShow(() => {
+  // Data is auto-loaded via Pinia persist plugin
+})
 
 function editProfile() {
   uni.showToast({ title: '功能开发中', icon: 'none' })
@@ -137,11 +121,11 @@ function viewAllCharts() {
 
 function openChart(chart) {
   if (chart.id) {
-    uni.navigateTo({ url: `/pages/result/index?chartId=${chart.id}` })
+    zw.$router.go('/pages/result/index', { chartId: chart.id })
   }
 }
 
-function navigateSetting(type) {
+function navigateSetting() {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 

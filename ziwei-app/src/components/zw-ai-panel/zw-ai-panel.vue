@@ -94,7 +94,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue'
-import { interpretChart as interpretChartApi } from '@/api/ai.js'
+import $api from '@/core/api'
 
 // ========== Props ==========
 const props = defineProps({
@@ -173,7 +173,7 @@ async function doInterpret(question) {
   lastQuestion.value = question
 
   try {
-    const res = await interpretChartApi(props.chartId, question)
+    const res = await $api.ai.interpretChart(props.chartId, question)
     const data = res.data || res
     if (data && typeof data === 'string') {
       interpretation.value = data

@@ -6,7 +6,7 @@
       <view class="state-spinner">
         <text class="state-spin-icon">&#9775;</text>
       </view>
-      <text class="state-title">正在加载命盘...</text>
+      <text class="state-title">正在计算命盘...</text>
       <text class="state-hint">紫微斗数 &#183; 洞悉天命</text>
     </view>
 
@@ -24,77 +24,13 @@
 
     <!-- Chart Content -->
     <view v-else class="result-content">
-      <!-- Basic Info Bar -->
-      <view class="info-bar">
-        <view class="info-bazi">
-          <text class="bazi-pillar" v-if="chartData.yearPillar">{{ chartData.yearPillar }}</text>
-          <text class="bazi-pillar" v-if="chartData.monthPillar">{{ chartData.monthPillar }}</text>
-          <text class="bazi-pillar" v-if="chartData.dayPillar">{{ chartData.dayPillar }}</text>
-          <text class="bazi-pillar" v-if="chartData.hourPillar">{{ chartData.hourPillar }}</text>
-        </view>
-        <view class="info-meta">
-          <text class="meta-text" v-if="chartData.wuxingJu">{{ chartData.wuxingJu }}</text>
-          <text class="meta-text" v-if="chartData.mingGong">命宫{{ chartData.mingGong }}</text>
-          <text class="meta-text" v-if="chartData.shenGong">身宫{{ chartData.shenGong }}</text>
-        </view>
-      </view>
-
-      <!-- Chart Board Canvas -->
+      <!-- Chart Board Canvas (easycom: zw-chart-board) -->
       <view class="board-section">
-        <ChartBoard
+        <zw-chart-board
           ref="chartBoardRef"
           :chartData="chartData"
-          :activeTab="activeTab"
           @palaceClick="onPalaceClick"
         />
-      </view>
-
-      <!-- Tab Navigation -->
-      <view class="tab-wrap">
-        <view class="tab-bar">
-          <view
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="tab-item"
-            :class="{ 'tab-active': activeTab === tab.key }"
-            @tap="activeTab = tab.key"
-          >
-            <text class="tab-text">{{ tab.label }}</text>
-            <view v-if="activeTab === tab.key" class="tab-indicator"></view>
-          </view>
-        </view>
-      </view>
-
-      <!-- Patterns (格局) Section -->
-      <view v-if="chartData.patterns && chartData.patterns.length > 0" class="patterns-section">
-        <view class="section-header">
-          <text class="section-title">命盘格局</text>
-        </view>
-        <scroll-view class="patterns-scroll" scroll-x :show-scrollbar="false">
-          <view class="pattern-list">
-            <view
-              v-for="(pattern, idx) in patternDetails"
-              :key="idx"
-              class="pattern-card"
-            >
-              <view class="pattern-header">
-                <text class="pattern-name">{{ pattern.name }}</text>
-                <text v-if="pattern.level" class="pattern-level" :class="getPatternClass(pattern.level)">
-                  {{ pattern.level }}
-                </text>
-              </view>
-              <text v-if="pattern.description" class="pattern-desc">{{ pattern.description }}</text>
-            </view>
-            <view
-              v-if="patternDetails.length === 0"
-              v-for="(name, idx) in chartData.patterns"
-              :key="'p' + idx"
-              class="pattern-card pattern-card-simple"
-            >
-              <text class="pattern-name-simple">{{ name }}</text>
-            </view>
-          </view>
-        </scroll-view>
       </view>
 
       <!-- AI Interpretation Button -->
@@ -106,16 +42,16 @@
       </view>
     </view>
 
-    <!-- Palace Detail Popup -->
-    <PalaceDetail
+    <!-- Palace Detail Popup (easycom: zw-palace-detail) -->
+    <zw-palace-detail
       :visible="showDetail"
       :palace="selectedPalace"
       :isMingGong="isSelectedMingGong"
       @close="showDetail = false"
     />
 
-    <!-- AI Interpretation Panel -->
-    <AiPanel
+    <!-- AI Interpretation Panel (easycom: zw-ai-panel) -->
+    <zw-ai-panel
       :visible="showAiPanel"
       :chartId="chartData.id"
       @close="showAiPanel = false"
@@ -126,19 +62,15 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import ChartBoard from '@/components/ChartBoard.vue'
-import PalaceDetail from '@/components/PalaceDetail.vue'
-import AiPanel from '@/components/AiPanel.vue'
-import { getChartById } from '@/api/chart.js'
+import { useChart } from '@/core/hooks/useChart'
 
-const loading = ref(true)
-const errorMsg = ref('')
-const activeTab = ref('natal')
+const { calculateChart, loadChart, getMockChartData, loading, errorMsg } = useChart()
+
 const showDetail = ref(false)
 const selectedPalace = ref({})
 const chartBoardRef = ref(null)
-const chartId = ref(null)
 const showAiPanel = ref(false)
+let pendingFormData = null
 
 const chartData = reactive({
   id: null,
@@ -154,67 +86,43 @@ const chartData = reactive({
   patternDetails: [],
 })
 
-const tabs = [
-  { key: 'natal', label: '本命盘' },
-  { key: 'daxian', label: '大限' },
-  { key: 'liunian', label: '流年' },
-]
-
 const isSelectedMingGong = computed(() => {
   if (!selectedPalace.value || !chartData.mingGong) return false
   const dizhi = selectedPalace.value.dizhi || ''
   return chartData.mingGong.startsWith(dizhi)
 })
 
-const patternDetails = computed(() => {
-  const details = chartData.patternDetails || []
-  if (details.length > 0) return details
-  return (chartData.patterns || []).map(name => ({ name, level: '', description: '' }))
-})
-
 onLoad((options) => {
-  if (options && options.chartId) {
-    chartId.value = options.chartId
-    fetchChartData()
+  // Priority 1: pending chart request from chart page
+  try {
+    const stored = uni.getStorageSync('pending_chart_request')
+    if (stored) {
+      pendingFormData = JSON.parse(stored)
+      uni.removeStorageSync('pending_chart_request')
+    }
+  } catch (_) { /* ignore */ }
+
+  if (pendingFormData) {
+    fetchChartFromForm()
+  } else if (options && options.chartId) {
+    // Priority 2: existing chart by ID
+    fetchChartData(options.chartId)
   } else {
     useMockData()
   }
 })
 
-async function fetchChartData() {
-  try {
-    const stored = uni.getStorageSync('current_chart')
-    if (stored) {
-      const data = JSON.parse(stored)
-      if (data && data.palaces) {
-        Object.assign(chartData, data)
-        loading.value = false
-        return
-      }
-    }
-  } catch (_) { /* ignore */ }
-
-  if (!chartId.value) {
-    useMockData()
-    return
-  }
-
-  loading.value = true
-  errorMsg.value = ''
-
-  try {
-    const res = await getChartById(chartId.value)
-    const data = res.data || res
-    if (!data || !data.palaces) {
-      throw new Error('返回数据格式异常')
-    }
+async function fetchChartFromForm() {
+  const data = await calculateChart(pendingFormData)
+  if (data) {
     Object.assign(chartData, data)
-    uni.setStorageSync('current_chart', JSON.stringify(data))
-    loading.value = false
-  } catch (err) {
-    console.error('[ZiWei] Failed to load chart:', err)
-    errorMsg.value = '后端服务暂未启动，可查看模拟数据'
-    loading.value = false
+  }
+}
+
+async function fetchChartData(id) {
+  const data = await loadChart(id)
+  if (data) {
+    Object.assign(chartData, data)
   }
 }
 
@@ -231,97 +139,8 @@ function requestAIInterpretation() {
   showAiPanel.value = true
 }
 
-function getPatternClass(level) {
-  if (!level) return ''
-  if (level.includes('上') || level.includes('高')) return 'level-high'
-  if (level.includes('中')) return 'level-mid'
-  return 'level-normal'
-}
-
 function useMockData() {
-  loading.value = false
-  errorMsg.value = ''
   Object.assign(chartData, getMockChartData())
-}
-
-function getMockChartData() {
-  return {
-    id: 0,
-    solarYear: 1990, solarMonth: 5, solarDay: 15, solarHour: 5,
-    gender: 1, birthPlace: '北京',
-    lunarYear: 1990, lunarMonth: 4, lunarDay: 21, isLeapMonth: false,
-    yearPillar: '庚午', monthPillar: '辛巳', dayPillar: '庚辰', hourPillar: '壬午',
-    mingGong: '寅宫', shenGong: '子宫',
-    wuxingJu: '金四局',
-    natalSihua: {
-      huaLu: { starCode: 'taiyang', starName: '太阳', brightness: '庙', sihuaType: '禄' },
-      huaQuan: { starCode: 'wuqu', starName: '武曲', brightness: '旺', sihuaType: '权' },
-      huaKe: { starCode: 'taiyin', starName: '太阴', brightness: '利', sihuaType: '科' },
-      huaJi: { starCode: 'tiantong', starName: '天同', brightness: '平', sihuaType: '忌' },
-    },
-    palaces: [
-      { palaceType: 1, palaceName: '命宫', dizhi: '寅', tianGan: '丙', isShenGong: false, daXianLabel: '3-12岁',
-        majorStars: [{ starCode: 'ziwei', starName: '紫微', brightness: '庙', sihuaType: '' }, { starCode: 'tianfu', starName: '天府', brightness: '庙', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'zuofu', starName: '左辅', brightness: '得', sihuaType: '' }, { starCode: 'youbi', starName: '右弼', brightness: '得', sihuaType: '' }],
-        minorStars: [{ starCode: 'tiankui', starName: '天魁', brightness: '', sihuaType: '' }, { starCode: 'tianyue', starName: '天钺', brightness: '', sihuaType: '' }] },
-      { palaceType: 2, palaceName: '兄弟宫', dizhi: '卯', tianGan: '丁', isShenGong: false, daXianLabel: '13-22岁',
-        majorStars: [{ starCode: 'tianji', starName: '天机', brightness: '利', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'wenchang', starName: '文昌', brightness: '得', sihuaType: '' }],
-        minorStars: [{ starCode: 'tianma', starName: '天马', brightness: '', sihuaType: '' }] },
-      { palaceType: 3, palaceName: '夫妻宫', dizhi: '辰', tianGan: '戊', isShenGong: false, daXianLabel: '23-32岁',
-        majorStars: [{ starCode: 'taiyang', starName: '太阳', brightness: '旺', sihuaType: '禄' }, { starCode: 'jumen', starName: '巨门', brightness: '平', sihuaType: '' }],
-        auxiliaryStars: [], minorStars: [{ starCode: 'tianxi', starName: '天喜', brightness: '', sihuaType: '' }] },
-      { palaceType: 4, palaceName: '子女宫', dizhi: '巳', tianGan: '己', isShenGong: false, daXianLabel: '33-42岁',
-        majorStars: [{ starCode: 'wuqu', starName: '武曲', brightness: '旺', sihuaType: '权' }, { starCode: 'tianxiang', starName: '天相', brightness: '得', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'wenqu', starName: '文曲', brightness: '平', sihuaType: '' }], minorStars: [] },
-      { palaceType: 5, palaceName: '财帛宫', dizhi: '午', tianGan: '庚', isShenGong: false, daXianLabel: '43-52岁',
-        majorStars: [{ starCode: 'tiantong', starName: '天同', brightness: '平', sihuaType: '忌' }, { starCode: 'tianliang', starName: '天梁', brightness: '旺', sihuaType: '' }],
-        auxiliaryStars: [], minorStars: [{ starCode: 'lucun', starName: '禄存', brightness: '', sihuaType: '' }] },
-      { palaceType: 6, palaceName: '疾厄宫', dizhi: '未', tianGan: '辛', isShenGong: false, daXianLabel: '53-62岁',
-        majorStars: [{ starCode: 'qisha', starName: '七杀', brightness: '陷', sihuaType: '' }],
-        auxiliaryStars: [], minorStars: [{ starCode: 'qingyang', starName: '擎羊', brightness: '陷', sihuaType: '' }] },
-      { palaceType: 7, palaceName: '迁移宫', dizhi: '申', tianGan: '壬', isShenGong: false, daXianLabel: '63-72岁',
-        majorStars: [{ starCode: 'lianzhen', starName: '廉贞', brightness: '利', sihuaType: '' }, { starCode: 'pojun', starName: '破军', brightness: '得', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'tuoluo', starName: '陀罗', brightness: '陷', sihuaType: '' }],
-        minorStars: [{ starCode: 'tianxing', starName: '天刑', brightness: '', sihuaType: '' }] },
-      { palaceType: 8, palaceName: '交友宫', dizhi: '酉', tianGan: '癸', isShenGong: false, daXianLabel: '73-82岁',
-        majorStars: [], auxiliaryStars: [{ starCode: 'hongluan', starName: '红鸾', brightness: '', sihuaType: '' }],
-        minorStars: [{ starCode: 'tianyao', starName: '天姚', brightness: '', sihuaType: '' }] },
-      { palaceType: 9, palaceName: '官禄宫', dizhi: '戌', tianGan: '甲', isShenGong: false, daXianLabel: '83-92岁',
-        majorStars: [{ starCode: 'tanlang', starName: '贪狼', brightness: '旺', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'huoxing', starName: '火星', brightness: '陷', sihuaType: '' }, { starCode: 'lingxing', starName: '铃星', brightness: '陷', sihuaType: '' }], minorStars: [] },
-      { palaceType: 10, palaceName: '田宅宫', dizhi: '亥', tianGan: '乙', isShenGong: false, daXianLabel: '93-102岁',
-        majorStars: [{ starCode: 'taiyin', starName: '太阴', brightness: '庙', sihuaType: '科' }],
-        auxiliaryStars: [], minorStars: [{ starCode: 'dikong', starName: '地空', brightness: '', sihuaType: '' }, { starCode: 'dijie', starName: '地劫', brightness: '', sihuaType: '' }] },
-      { palaceType: 11, palaceName: '福德宫', dizhi: '子', tianGan: '丙', isShenGong: true, daXianLabel: '103-112岁',
-        majorStars: [{ starCode: 'tianfu', starName: '天府', brightness: '得', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'santai', starName: '三台', brightness: '', sihuaType: '' }, { starCode: 'bazuo', starName: '八座', brightness: '', sihuaType: '' }], minorStars: [] },
-      { palaceType: 12, palaceName: '父母宫', dizhi: '丑', tianGan: '丁', isShenGong: false, daXianLabel: '113-122岁',
-        majorStars: [{ starCode: 'tianliang', starName: '天梁', brightness: '庙', sihuaType: '' }],
-        auxiliaryStars: [{ starCode: 'tiangui', starName: '天贵', brightness: '', sihuaType: '' }],
-        minorStars: [{ starCode: 'jieshen', starName: '解神', brightness: '', sihuaType: '' }] },
-    ],
-    daxians: [
-      { ageStart: 3, ageEnd: 12, palaceName: '命宫', direction: '顺行' },
-      { ageStart: 13, ageEnd: 22, palaceName: '兄弟宫', direction: '顺行' },
-      { ageStart: 23, ageEnd: 32, palaceName: '夫妻宫', direction: '顺行' },
-      { ageStart: 33, ageEnd: 42, palaceName: '子女宫', direction: '顺行' },
-      { ageStart: 43, ageEnd: 52, palaceName: '财帛宫', direction: '顺行' },
-      { ageStart: 53, ageEnd: 62, palaceName: '疾厄宫', direction: '顺行' },
-      { ageStart: 63, ageEnd: 72, palaceName: '迁移宫', direction: '顺行' },
-      { ageStart: 73, ageEnd: 82, palaceName: '交友宫', direction: '顺行' },
-      { ageStart: 83, ageEnd: 92, palaceName: '官禄宫', direction: '顺行' },
-      { ageStart: 93, ageEnd: 102, palaceName: '田宅宫', direction: '顺行' },
-      { ageStart: 103, ageEnd: 112, palaceName: '福德宫', direction: '顺行' },
-      { ageStart: 113, ageEnd: 122, palaceName: '父母宫', direction: '顺行' },
-    ],
-    patterns: ['紫府同宫', '日月并明'],
-    patternDetails: [
-      { name: '紫府同宫', level: '上格', description: '紫微与天府同度命宫，主一生富贵，有领导才能，格局高者可在政商领域有极大作为。' },
-      { name: '日月并明', level: '中格', description: '太阳、太阴在庙旺之地对拱，主光明磊落，事业有成，家庭和睦。' },
-    ],
-    createTime: new Date().toISOString(),
-  }
 }
 </script>
 
