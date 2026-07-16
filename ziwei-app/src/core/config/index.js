@@ -18,8 +18,8 @@ function getBaseUrl() {
   try {
     const accountInfo = uni.getAccountInfoSync()
     const envVersion = accountInfo?.miniProgram?.envVersion
-    if (envVersion === 'trial') {
-      return import.meta.env.ZIWEI_DEV_BASE_URL || import.meta.env.ZIWEI_BASE_URL
+    if (envVersion === 'trial' || envVersion === 'develop') {
+      return import.meta.env.ZIWEI_BASE_URL
     }
   } catch (_) {
     /* getAccountInfoSync may not be available */

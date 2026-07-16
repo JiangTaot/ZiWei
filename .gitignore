@@ -22,3 +22,9 @@ target/
 .env
 .env.local
 application-dev.yml
+
+# SSL certificates
+**/ssl/
+
+# Temp QR code
+*.png

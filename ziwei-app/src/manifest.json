@@ -2,8 +2,8 @@
   "name": "紫薇斗数",
   "appid": "wxff8f8bad3c726539",
   "description": "紫薇斗数命盘排盘与解读小程序",
-  "versionName": "1.0.0",
-  "versionCode": "100",
+  "versionName": "1.0.1",
+  "versionCode": "101",
   "transformPx": false,
   "mp-weixin": {
     "appid": "wxff8f8bad3c726539",

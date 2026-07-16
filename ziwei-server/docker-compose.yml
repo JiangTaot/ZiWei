@@ -1,0 +1,38 @@
+# ============================================================
+# ZiWei 紫微斗数 — Docker Compose（仅应用服务）
+# MySQL / Redis 已在线部署，此处直接连接外部实例
+#
+# 构建并推送镜像:
+#   docker build -t 111.229.214.14:15001/ziwei-server:latest .
+#   docker login 111.229.214.14:15001 -u admin -p admin123
+#   docker push 111.229.214.14:15001/ziwei-server:latest
+#
+# 启动: docker compose up -d
+# 查看日志: docker compose logs -f
+# ============================================================
+
+services:
+  ziwei-server:
+    image: ${IMAGE_REGISTRY:-111.229.214.14:15001}/ziwei-server:${IMAGE_TAG:-latest}
+    container_name: ziwei-server
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-48121}:48121"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # 数据库（同机部署，桥接模式通过 host.docker.internal 访问宿主机）
+      MYSQL_HOST: ${MYSQL_HOST:-host.docker.internal}
+      MYSQL_PORT: ${MYSQL_PORT:-13306}
+      MYSQL_DB: ${MYSQL_DB:-ziwei}
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456}
+      # Redis（同机部署）
+      REDIS_HOST: ${REDIS_HOST:-host.docker.internal}
+      REDIS_PORT: ${REDIS_PORT:-16379}
+      # JVM
+      JAVA_OPTS: "-Xms256m -Xmx512m -XX:+UseG1GC"
+      # 密钥配置（通过 .env 传入）
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET:-}
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
